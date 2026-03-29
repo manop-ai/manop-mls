@@ -4,7 +4,15 @@ import PropertyCard from '../components/PropertyCard'
 
 const PHONE = "+2348103971657";
 const WA_MSG = encodeURIComponent(
-  `Hi, I want to list a property:\nProperty type: \nLocation: \nPrice: \nBedrooms: \nTitle: \nContact: `
+  `Hi, I want to list a property on Manop.
+
+  📍 Location:
+  💰 Price:
+  🏠 Property Type:
+  🛏 Bedrooms:
+  📝 Description:
+  📞 Contact:
+  📸 Images:`
 )
 const WA_LINK = `https://wa.me/${PHONE}?text=${WA_MSG}`
 
