@@ -2,10 +2,11 @@ import Link from 'next/link'
 import { getListings, getStats } from '../lib/supabase'
 import PropertyCard from '../components/PropertyCard'
 
+const PHONE = "+2348103971657";
 const WA_MSG = encodeURIComponent(
   `Hi, I want to list a property:\nProperty type: \nLocation: \nPrice: \nBedrooms: \nTitle: \nContact: `
 )
-const WA_LINK = `https://wa.me/?text=${WA_MSG}`
+const WA_LINK = `https://wa.me/${PHONE}?text=${WA_MSG}`
 
 export const revalidate = 60  // ISR — refresh every 60s
 
