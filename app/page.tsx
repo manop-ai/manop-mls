@@ -1,6 +1,6 @@
 import Link from 'next/link'
-import { getListings, getStats } from './lib/supabase'
-import PropertyCard from './components/PropertyCard'
+import { getListings, getStats } from '../lib/supabase'
+import PropertyCard from '../components/PropertyCard'
 
 const WA_MSG = encodeURIComponent(
   `Hi, I want to list a property:\nProperty type: \nLocation: \nPrice: \nBedrooms: \nTitle: \nContact: `
@@ -10,11 +10,12 @@ const WA_LINK = `https://wa.me/?text=${WA_MSG}`
 export const revalidate = 60  // ISR — refresh every 60s
 
 export default async function Home() {
-  const [listings, stats] = await Promise.all([
-    getListings(undefined, 9),
-    getStats(),
-  ])
-
+  // const [listings, stats] = await Promise.all([
+  //   getListings(undefined, 9),
+  //   getStats(),
+  // ])
+  const listings = []
+  const stats = { totalListings: 0, uniqueCities: 0 }
   return (
     <>
       {/* ── HERO ── */}
