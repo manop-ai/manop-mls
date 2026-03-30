@@ -6,27 +6,31 @@ const supabaseKey  = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
 export const supabase = createClient(supabaseUrl, supabaseKey)
 
 export type Property = {
-  id:            string
-  property_type: string | null
-  bedrooms:      number | null
-  bathrooms:     number | null
-  city:          string | null
-  neighborhood:  string | null
-  country_code:  string | null
-  address_local: string | null
-  price_local:   number | null
-  price_usd:     number | null
-  currency_code: string | null
-  listing_type:  string | null
-  tenure_type:   string | null
-  title_status:  string | null
-  size_sqm:      number | null
-  investment_score:       number | null
-  estimated_yield_pct:    number | null
-  diaspora_appeal_score:  number | null
-  risk_flags:    string[] | null
-  created_at:    string | null
-  raw_data:      Record<string, unknown> | null
+  id:                  string
+  property_type:       string | null
+  bedrooms:            number | null
+  bathrooms:           number | null
+  city:                string | null
+  neighborhood:        string | null
+  country_code:        string | null
+  address_local:       string | null
+  price_local:         number | null
+  price_usd:           number | null
+  currency_code:       string | null
+  listing_type:        string | null
+  tenure_type:         string | null
+  title_status:        string | null
+  title_document_type: string | null
+  furnishing:          string | null
+  agent_phone:         string | null
+  source_type:         string | null
+  size_sqm:            number | null
+  investment_score:        number | null
+  estimated_yield_pct:     number | null
+  diaspora_appeal_score:   number | null
+  risk_flags:          string[] | null
+  created_at:          string | null
+  raw_data:            Record<string, unknown> | null
 }
 
 export async function getListings(city?: string, limit = 20): Promise<Property[]> {
@@ -65,15 +69,17 @@ export async function getStats() {
     .from('properties')
     .select('city')
 
-  const { data: agents } = await supabase
+  const { count: totalAgents } = await supabase
     .from('agent_leads')
-    .select('id', { count: 'exact', head: true })
+    .select('*', { count: 'exact', head: true })
 
-  const uniqueCities = new Set((cities || []).map((r: {city: string | null}) => r.city).filter(Boolean)).size
+  const uniqueCities = new Set(
+    (cities || []).map((r: { city: string | null }) => r.city).filter(Boolean)
+  ).size
 
   return {
     totalListings: totalListings || 0,
     uniqueCities,
-    totalAgents: agents || 0,
+    totalAgents:   totalAgents  || 0,
   }
 }
