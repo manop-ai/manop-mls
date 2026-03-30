@@ -13,7 +13,7 @@ export const metadata: Metadata = {
 const WA_MSG = encodeURIComponent(
   `Hi, I want to list a property:\nProperty type: \nLocation: \nPrice: \nBedrooms: \nTitle: \nContact: `
 )
-const WA_LINK = `https://wa.me/?text=${WA_MSG}`
+const WA_LINK = `https://wa.me/14155238886?text=${WA_MSG}`
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {
   return (
