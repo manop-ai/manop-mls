@@ -2,32 +2,22 @@ import Link from 'next/link'
 import { getListings, getStats } from '../lib/supabase'
 import PropertyCard from '../components/PropertyCard'
 
-const PHONE = "+2348103971657";
+const PHONE  = "+14155238886"
 const WA_MSG = encodeURIComponent(
-  `Hi, I want to list a property on Manop.
-
-  📍 Location:
-  💰 Price:
-  🏠 Property Type:
-  🛏 Bedrooms:
-  📝 Description:
-  📞 Contact:
-  📸 Images:`
+  `Hi, I want to list a property on Manop.\n\nLocation: \nPrice: \nProperty Type: \nBedrooms: \nContact: `
 )
-const WA_LINK = `https://wa.me/${PHONE}?text=${WA_MSG}`
+const WA_LINK = `https://wa.me/${PHONE.replace('+','')}?text=${WA_MSG}`
 
-export const revalidate = 60  // ISR — refresh every 60s
+export const revalidate = 60
 
 export default async function Home() {
-  // const [listings, stats] = await Promise.all([
-  //   getListings(undefined, 9),
-  //   getStats(),
-  // ])
-  const listings = []
-  const stats = { totalListings: 0, uniqueCities: 0 }
+  const [listings, stats] = await Promise.all([
+    getListings(undefined, 9),
+    getStats(),
+  ])
+
   return (
     <>
-      {/* ── HERO ── */}
       <section className="hero">
         <div className="hero-inner">
           <div className="hero-tag">
@@ -68,7 +58,6 @@ export default async function Home() {
         </div>
       </section>
 
-      {/* ── STATS ── */}
       <div className="stats-bar">
         <div className="stats-inner">
           <div className="stat">
@@ -90,7 +79,6 @@ export default async function Home() {
         </div>
       </div>
 
-      {/* ── LIVE FEED ── */}
       <div className="section">
         <div className="section-header">
           <h2 className="section-title">Latest Listings</h2>
@@ -99,7 +87,11 @@ export default async function Home() {
 
         {listings.length > 0 ? (
           <div className="listings-grid">
-            {listings.map(p => <PropertyCard key={p.id} p={p} />)}
+            {listings.map(p => (
+              <Link key={p.id} href={`/listing/${p.id}`} style={{ textDecoration: 'none' }}>
+                <PropertyCard key={p.id} p={p} />
+              </Link>
+            ))}
           </div>
         ) : (
           <div className="empty">
@@ -109,12 +101,11 @@ export default async function Home() {
         )}
       </div>
 
-      {/* ── WA BANNER ── */}
       <section className="wa-banner">
         <h2>Are you an agent in Africa?</h2>
         <p>
           List your properties for free. Send us a WhatsApp message
-          with your listing details and we'll publish it instantly.
+          with your listing details and we will publish it instantly.
         </p>
         <a href={WA_LINK} target="_blank" rel="noopener" className="btn-wa">
           <svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor">
