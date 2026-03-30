@@ -8,3 +8,4 @@ mnt/
 .vercel
 
 .repomix-output.xml
+.env*.local
