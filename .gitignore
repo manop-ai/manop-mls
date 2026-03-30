@@ -6,3 +6,5 @@ mnt/
 *.log
 .DS_Store
 .vercel
+
+.repomix-output.xml
