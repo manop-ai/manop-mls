@@ -26,63 +26,61 @@ export default async function ListingDetail({ params }: { params: { id: string }
   const p = await getListing(params.id)
   if (!p) notFound()
 
-  const ext = p as typeof p & {
-    furnishing?: string | null
-    title_document_type?: string | null
-    agent_phone?: string | null
-  }
+  const raw = (p.raw_data || {}) as Record<string, unknown>
 
-  const location = [ext.neighborhood, ext.city, ext.country_code].filter(Boolean).join(', ')
-  const isRent   = ext.listing_type === 'for-rent' || ext.listing_type === 'short-let'
+  const location   = [p.neighborhood, p.city].filter(Boolean).join(', ')
+  const isRent     = p.listing_type === 'for-rent' || p.listing_type === 'short-let'
+  const hasScores  = p.investment_score != null || p.estimated_yield_pct != null
 
-  // Agent phone — check direct column first, then raw_data
+  // Agent phone
   const agentPhone = (
-    ext.agent_phone ||
-    (ext.raw_data ? String((ext.raw_data as Record<string,unknown>)['agent_phone'] || '') : '')
+    (p as any).agent_phone ||
+    String(raw['agent_phone'] || '')
   ).replace(/\D/g, '')
 
-  // Images — pulled from raw_data.media_urls
-  const mediaUrls: string[] = (() => {
-    if (!ext.raw_data) return []
-    const urls = (ext.raw_data as Record<string,unknown>)['media_urls']
-    if (Array.isArray(urls)) return urls.filter(Boolean) as string[]
-    return []
-  })()
+  // Images from raw_data
+  const mediaUrls: string[] = Array.isArray(raw['media_urls'])
+    ? (raw['media_urls'] as string[]).filter(Boolean)
+    : []
 
-  // Investment scores — only show if real data exists, never fake
-  const hasScores = ext.investment_score != null || ext.estimated_yield_pct != null
+  // Features from raw_data
+  const features: string[] = Array.isArray(raw['features'])
+    ? (raw['features'] as string[]).filter(Boolean)
+    : []
+
+  // Title
+  const titleDoc    = (p as any).title_document_type || null
+  const titleStatus = p.title_status || null
 
   return (
     <>
       {/* ── HERO ── */}
       <section className="detail-hero">
         <div className="detail-inner">
-          <Link href="/listings" className="detail-back">← Back to listings</Link>
-
+          <Link href="/listings" className="detail-back">
+            \u2190 Back to listings
+          </Link>
           <h1 className="detail-title">
-            {ext.bedrooms ? `${ext.bedrooms}-Bedroom ` : ''}{ext.property_type || 'Property'}
-            {ext.neighborhood ? ` in ${ext.neighborhood}` : ''}
+            {p.bedrooms ? `${p.bedrooms}-Bedroom ` : ''}
+            {(p as any).property_type || 'Property'}
+            {p.neighborhood ? ` in ${p.neighborhood}` : ''}
           </h1>
-
           <div className="detail-price">
-            {fmt(ext.price_local, ext.currency_code)}
-            {isRent && <span style={{ fontSize: '1rem', color: 'var(--muted)' }}> / month</span>}
+            {fmt(p.price_local, p.currency_code)}
+            {isRent && (
+              <span style={{ fontSize: '1rem', color: 'var(--muted)' }}> / month</span>
+            )}
           </div>
         </div>
       </section>
 
       {/* ── IMAGES ── */}
       {mediaUrls.length > 0 && (
-        <div style={{
-          maxWidth: 860, margin: '0 auto',
-          padding: '1.5rem 1.5rem 0',
-        }}>
+        <div style={{ maxWidth: 860, margin: '0 auto', padding: '1.5rem 1.5rem 0' }}>
           <div style={{
             display: 'grid',
-            gridTemplateColumns: mediaUrls.length === 1
-              ? '1fr'
-              : mediaUrls.length === 2
-              ? '1fr 1fr'
+            gridTemplateColumns: mediaUrls.length === 1 ? '1fr'
+              : mediaUrls.length === 2 ? '1fr 1fr'
               : 'repeat(3, 1fr)',
             gap: '0.75rem',
           }}>
@@ -91,7 +89,7 @@ export default async function ListingDetail({ params }: { params: { id: string }
                 style={{ display: 'block', borderRadius: 8, overflow: 'hidden' }}>
                 <img
                   src={url}
-                  alt={`Property image ${i + 1}`}
+                  alt={`Property photo ${i + 1}`}
                   style={{
                     width: '100%',
                     height: i === 0 && mediaUrls.length > 1 ? 280 : 200,
@@ -114,58 +112,93 @@ export default async function ListingDetail({ params }: { params: { id: string }
       <div className="detail-body">
         <div className="detail-grid">
 
-          {/* LEFT — property details */}
+          {/* ── LEFT ── */}
           <div>
+            {/* Property Details */}
             <div className="detail-section">
               <h3>Property Details</h3>
-              {[
-                ['Type',        ext.property_type],
-                ['Bedrooms',    ext.bedrooms],
-                ['Bathrooms',   ext.bathrooms],
-                ['Size',        ext.size_sqm ? `${ext.size_sqm} m\u00B2` : null],
-                ['Location',    location],
-                ['Listing',     ext.listing_type?.replace(/-/g, ' ')],
-                ['Furnishing',  ext.furnishing],
-              ].filter(r => r[1] != null && r[1] !== '').map(([label, value]) => (
-                <div key={label as string} className="detail-row">
+              {([
+                ['Type',       (p as any).property_type],
+                ['Bedrooms',   p.bedrooms],
+                ['Bathrooms',  p.bathrooms],
+                ['Size',       p.size_sqm ? `${p.size_sqm} m\u00B2` : null],
+                ['Location',   location],
+                ['Listing',    p.listing_type?.replace(/-/g, ' ')],
+                ['Furnishing', (p as any).furnishing],
+              ] as [string, unknown][]).filter(r => r[1] != null && r[1] !== '').map(([label, value]) => (
+                <div key={label} className="detail-row">
                   <span className="label">{label}</span>
                   <span className="value">{String(value)}</span>
                 </div>
               ))}
             </div>
 
+            {/* Legal & Title */}
             <div className="detail-section">
-              <h3>Legal & Title</h3>
-              {[
-                ['Tenure type',   ext.tenure_type],
-                ['Title status',  ext.title_status],
-                ['Document type', ext.title_document_type],
-              ].filter(r => r[1]).map(([label, value]) => (
-                <div key={label as string} className="detail-row">
-                  <span className="label">{label}</span>
-                  <span className="value" style={{
-                    color: value === 'verified'   ? 'var(--green-light)'
-                         : value === 'unverified' ? 'var(--red)'
-                         : 'var(--earth)'
-                  }}>
-                    {String(value)}
-                  </span>
-                </div>
-              ))}
-              {(!ext.tenure_type && !ext.title_status) && (
+              <h3>Legal &amp; Title</h3>
+              {titleDoc || titleStatus ? (
+                ([
+                  ['Document type', titleDoc],
+                  ['Title status',  titleStatus],
+                  ['Tenure type',   p.tenure_type],
+                ] as [string, unknown][]).filter(r => r[1]).map(([label, value]) => (
+                  <div key={label} className="detail-row">
+                    <span className="label">{label}</span>
+                    <span className="value" style={{
+                      color: value === 'verified'     ? 'var(--green-light)'
+                           : value === 'unverified'   ? 'var(--muted)'
+                           : 'var(--earth)',
+                      fontWeight: label === 'Document type' ? 600 : 400,
+                    }}>
+                      {String(value)}
+                    </span>
+                  </div>
+                ))
+              ) : (
                 <p style={{ fontSize: '0.85rem', color: 'var(--muted)' }}>
                   Title information pending verification.
                 </p>
               )}
             </div>
 
-            {ext.risk_flags && ext.risk_flags.length > 0 && (
+            {/* Features */}
+            {features.length > 0 && (
+              <div className="detail-section">
+                <h3>Features &amp; Amenities</h3>
+                <div style={{
+                  display: 'grid',
+                  gridTemplateColumns: '1fr 1fr',
+                  gap: '0.35rem 1rem',
+                  marginTop: '0.25rem',
+                }}>
+                  {features.map((feat, i) => (
+                    <div key={i} style={{
+                      fontSize: '0.88rem',
+                      color: 'var(--earth)',
+                      display: 'flex',
+                      alignItems: 'flex-start',
+                      gap: '0.4rem',
+                      padding: '0.25rem 0',
+                      borderBottom: '1px solid var(--border)',
+                    }}>
+                      <span style={{ color: 'var(--clay)', fontWeight: 700, flexShrink: 0 }}>
+                        \u2713
+                      </span>
+                      {feat}
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )}
+
+            {/* Risk flags */}
+            {p.risk_flags && p.risk_flags.length > 0 && (
               <div className="detail-section" style={{ borderColor: 'rgba(193,57,43,0.3)' }}>
                 <h3 style={{ color: 'var(--red)' }}>Risk Flags</h3>
-                {ext.risk_flags.map(flag => (
+                {p.risk_flags.map(flag => (
                   <div key={flag} className="detail-row">
                     <span style={{ color: 'var(--red)', fontSize: '0.85rem' }}>
-                      &#9888; {flag.replace(/-/g, ' ')}
+                      \u26A0 {flag.replace(/-/g, ' ')}
                     </span>
                   </div>
                 ))}
@@ -173,9 +206,9 @@ export default async function ListingDetail({ params }: { params: { id: string }
             )}
           </div>
 
-          {/* RIGHT — insights + contact */}
+          {/* ── RIGHT ── */}
           <div>
-            {/* Market Intelligence Panel */}
+            {/* Market Intelligence */}
             <div style={{
               background: 'var(--earth)',
               border: '1px solid rgba(193,123,62,0.25)',
@@ -187,36 +220,26 @@ export default async function ListingDetail({ params }: { params: { id: string }
                 textTransform: 'uppercase', letterSpacing: '0.08em',
                 color: 'var(--clay-light)', marginBottom: '1rem',
               }}>
-                &#10022; Market Intelligence
+                \u2726 Market Intelligence
               </div>
 
               {hasScores ? (
                 <>
-                  {ext.investment_score != null && (
+                  {p.investment_score != null && (
                     <div className="insight-card" style={{ marginBottom: '0.75rem' }}>
                       <div className="insight-label">Investment Score</div>
                       <div className="insight-value">
-                        {ext.investment_score}
+                        {p.investment_score}
                         <span style={{ fontSize: '1rem', color: 'var(--muted)' }}>/100</span>
                       </div>
                       <div className="insight-sub">Powered by Manop AI</div>
                     </div>
                   )}
-                  {ext.estimated_yield_pct != null && (
-                    <div className="insight-card" style={{ marginBottom: '0.75rem' }}>
-                      <div className="insight-label">Est. Rental Yield</div>
-                      <div className="insight-value">{ext.estimated_yield_pct}%</div>
-                      <div className="insight-sub">Annual yield estimate</div>
-                    </div>
-                  )}
-                  {ext.diaspora_appeal_score != null && (
+                  {p.estimated_yield_pct != null && (
                     <div className="insight-card">
-                      <div className="insight-label">Diaspora Appeal</div>
-                      <div className="insight-value">
-                        {ext.diaspora_appeal_score}
-                        <span style={{ fontSize: '1rem', color: 'var(--muted)' }}>/100</span>
-                      </div>
-                      <div className="insight-sub">Based on market data</div>
+                      <div className="insight-label">Est. Rental Yield</div>
+                      <div className="insight-value">{p.estimated_yield_pct}%</div>
+                      <div className="insight-sub">Annual yield estimate</div>
                     </div>
                   )}
                 </>
@@ -224,42 +247,22 @@ export default async function ListingDetail({ params }: { params: { id: string }
                 <div style={{
                   padding: '1.25rem',
                   background: 'rgba(255,255,255,0.04)',
-                  borderRadius: 6,
-                  textAlign: 'center',
+                  borderRadius: 6, textAlign: 'center',
                 }}>
-                  <div style={{
-                    fontSize: '1.5rem',
-                    marginBottom: '0.5rem',
-                    opacity: 0.5,
-                  }}>
-                    &#9685;
+                  <div style={{ fontSize: '1.4rem', marginBottom: '0.5rem', opacity: 0.4 }}>
+                    \u25D5
                   </div>
                   <div style={{
-                    fontSize: '0.85rem',
-                    fontWeight: 600,
-                    color: 'var(--sand)',
-                    marginBottom: '0.4rem',
+                    fontSize: '0.85rem', fontWeight: 600,
+                    color: 'var(--sand)', marginBottom: '0.4rem',
                   }}>
                     Intelligence Building
                   </div>
-                  <div style={{
-                    fontSize: '0.78rem',
-                    color: 'var(--muted)',
-                    lineHeight: 1.5,
-                  }}>
-                    Investment scores, rental yields, and demand signals will appear here as Manop collects more Lagos market data.
+                  <div style={{ fontSize: '0.78rem', color: 'var(--muted)', lineHeight: 1.6 }}>
+                    Investment scores and yield benchmarks will appear here as Manop builds Lagos market data.
                   </div>
                 </div>
               )}
-
-              <p style={{
-                fontSize: '0.72rem',
-                color: 'rgba(139,115,85,0.6)',
-                marginTop: '1rem',
-                lineHeight: 1.5,
-              }}>
-                Data-driven insights powered by verified listings across Lagos.
-              </p>
             </div>
 
             {/* Contact Agent */}
@@ -270,23 +273,23 @@ export default async function ListingDetail({ params }: { params: { id: string }
                   href={`https://wa.me/${agentPhone}`}
                   target="_blank" rel="noopener"
                   className="btn-wa"
-                  style={{ width: '100%', justifyContent: 'center', marginBottom: '0.75rem' }}
+                  style={{ width: '100%', justifyContent: 'center' }}
                 >
-                  <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor" style={{ marginRight: 6 }}>
+                  <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor">
                     <path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347z"/>
                     <path d="M12 0C5.373 0 0 5.373 0 12c0 2.115.549 4.099 1.51 5.823L0 24l6.335-1.662A11.945 11.945 0 0012 24c6.627 0 12-5.373 12-12S18.627 0 12 0zm0 22c-1.891 0-3.659-.52-5.166-1.426l-.371-.22-3.762.987 1.005-3.668-.242-.378A9.946 9.946 0 012 12C2 6.477 6.477 2 12 2s10 4.477 10 10-4.477 10-10 10z"/>
                   </svg>
-                  WhatsApp Agent
+                  &nbsp; WhatsApp Agent
                 </a>
               ) : (
-                <a href={WA_LINK} target="_blank" rel="noopener" className="btn-wa"
-                  style={{ width: '100%', justifyContent: 'center' }}>
+                <a href={WA_LINK} target="_blank" rel="noopener"
+                  className="btn-wa" style={{ width: '100%', justifyContent: 'center' }}>
                   Enquire via WhatsApp
                 </a>
               )}
             </div>
-
           </div>
+
         </div>
       </div>
     </>
@@ -296,15 +299,11 @@ export default async function ListingDetail({ params }: { params: { id: string }
 export async function generateMetadata({ params }: { params: { id: string } }) {
   const p = await getListing(params.id)
   if (!p) return { title: 'Listing not found' }
-  const loc  = (p as any).neighborhood || p.city || 'Africa'
-  const type = p.property_type || 'Property'
+  const loc  = p.neighborhood || p.city || 'Africa'
+  const type = (p as any).property_type || 'Property'
   const beds = p.bedrooms ? `${p.bedrooms}-Bed ` : ''
   return {
     title: `${beds}${type} in ${loc} — Manop MLS`,
-    description: `${p.listing_type === 'for-rent' ? 'For rent' : 'For sale'} in ${loc}. Listed on Manop Intelligence.`,
-    openGraph: {
-      title: `${beds}${type} in ${loc}`,
-      description: `View listing details, title status, and contact agent directly on Manop MLS.`,
-    },
+    description: `${p.listing_type === 'for-rent' ? 'For rent' : 'For sale'} in ${loc}. View listing on Manop Intelligence.`,
   }
 }
