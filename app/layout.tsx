@@ -11,7 +11,7 @@ export const metadata: Metadata = {
 }
 
 // One tap → WhatsApp opens → send → onboarding starts instantly
-const WA_MSG  = encodeURIComponent(`Hi, I want to list my property on Manop`)
+const WA_MSG  = encodeURIComponent(`Join nails-paragraph`)
 const WA_LINK = `https://wa.me/14155238886?text=${WA_MSG}`
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {
