@@ -10,9 +10,8 @@ export const metadata: Metadata = {
   }
 }
 
-const WA_MSG = encodeURIComponent(
-  `Hi, I want to list a property:\nProperty type: \nLocation: \nPrice: \nBedrooms: \nTitle: \nContact: `
-)
+// One tap → WhatsApp opens → send → onboarding starts instantly
+const WA_MSG  = encodeURIComponent(`Hi, I want to list my property on Manop`)
 const WA_LINK = `https://wa.me/14155238886?text=${WA_MSG}`
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {
@@ -20,7 +19,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
     <html lang="en">
       <body>
         <nav className="nav">
-          <div className="nav-logo">Africa<span>Listings</span></div>
+          <div className="nav-logo">Manop<span>MLS</span></div>
           <ul className="nav-links">
             <li><a href="/">Home</a></li>
             <li><a href="/listings">Listings</a></li>
@@ -34,9 +33,9 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
         {children}
         <footer>
           <div className="footer-inner">
-            <div className="footer-brand">AfricaListings</div>
+            <div className="footer-brand">Manop MLS</div>
             <div className="footer-text">Lagos · Accra · Nairobi · Cape Town</div>
-            <div className="footer-powered">Powered by <span>Manop AI</span></div>
+            <div className="footer-powered">Powered by <span>Manop Intelligence</span></div>
           </div>
         </footer>
       </body>
